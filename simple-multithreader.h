@@ -45,4 +45,52 @@ int main(int argc, char **argv) {
 
 #define main user_main
 
+class SimpleMultithreader {
+public:
+    // One-dimensional parallel_for
+    static void parallel_for(int low, int high, std::function<void(int)> &&lambda, int numThreads) {
+        auto start_time = std::chrono::high_resolution_clock::now();
 
+        // Define the thread function
+        struct ThreadData {
+            int start, end;
+            std::function<void(int)> func;
+        };
+
+        auto thread_function = [](void* arg) -> void* {
+            ThreadData* data = static_cast<ThreadData*>(arg);
+            for (int i = data->start; i < data->end; ++i) {
+                data->func(i);
+            }
+            return nullptr;
+        };
+
+        // Calculate the workload for each thread
+        int range = high - low;
+        int chunkSize = range / numThreads;
+        int remainder = range % numThreads;
+
+        std::vector<pthread_t> threads(numThreads);
+        std::vector<ThreadData> threadData(numThreads);
+
+        for (int t = 0; t < numThreads; ++t) {
+            int start = low + t * chunkSize + std::min(t, remainder);
+            int end = start + chunkSize + (t < remainder ? 1 : 0);
+            threadData[t] = {start, end, lambda};
+
+            if (pthread_create(&threads[t], nullptr, thread_function, &threadData[t]) != 0) {
+                std::cerr << "Error creating thread " << t << std::endl;
+                exit(1);
+            }
+        }
+
+        // Join all threads
+        for (int t = 0; t < numThreads; ++t) {
+            pthread_join(threads[t], nullptr);
+        }
+
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+        std::cout << "Execution time for 1D parallel_for: " << duration << " ms" << std::endl;
+    }
+}
