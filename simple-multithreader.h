@@ -1,8 +1,9 @@
 #include <iostream>
-#include <list>
 #include <functional>
-#include <stdlib.h>
-#include <cstring>
+#include <pthread.h>
+#include <vector>      // Added for std::vector
+#include <chrono>      // Added for std::chrono
+#include <algorithm>   
 #ifndef SIMPLE_MULTITHREADER_H
 #define SIMPLE_MULTITHREADER_H
 
@@ -45,9 +46,6 @@ int main(int argc, char **argv) {
   return rc;
 }
 
-
-
-
 class SimpleMultithreader {
 public:
     // One-dimensional parallel_for
@@ -56,7 +54,8 @@ public:
 
         // Define the thread function
         struct ThreadData {
-            int start, end;
+            int start,
+            int  end;
             std::function<void(int)> func;
         };
 
@@ -75,7 +74,7 @@ public:
 
         std::vector<pthread_t> threads(numThreads);
         std::vector<ThreadData> threadData(numThreads);
-
+        // create threads
         for (int t = 0; t < numThreads; ++t) {
             int start = low + t * chunkSize + std::min(t, remainder);
             int end = start + chunkSize + (t < remainder ? 1 : 0);
@@ -96,6 +95,7 @@ public:
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
         std::cout << "Execution time for 1D parallel_for: " << duration << " ms" << std::endl;
     }
+
 
     // Two-dimensional parallel_for
     static void parallel_for(int low1, int high1, int low2, int high2, 

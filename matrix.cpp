@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
   int** A = new int*[size];
   int** B = new int*[size];
   int** C = new int*[size];
-  parallel_for(0, size, [=](int i) {
+  SimpleMultithreader::parallel_for(0, size, [=](int i) {
     A[i] = new int[size];
     B[i] = new int[size];
     C[i] = new int[size];
@@ -20,20 +20,20 @@ int main(int argc, char** argv) {
       std::fill(C[i], C[i]+size, 0);
     }
   }, numThread);  
-  // start the parallel multiplication of two matrices
-  parallel_for(0, size, 0, size, [&](int i, int j) {
-    for(int k=0; k<size; k++) {
+  // Parallel multiplication of two matrices
+  SimpleMultithreader::parallel_for(0, size, 0, size, [&](int i, int j) {
+    for (int k = 0; k < size; k++) {
       C[i][j] += A[i][k] * B[k][j];
     }
   }, numThread);
   // verify the result matrix
   for(int i=0; i<size; i++) for(int j=0; j<size; j++) assert(C[i][j] == size);
   printf("Test Success. \n");
-  // cleanup memory
-  parallel_for(0, size, [=](int i) {
-    delete [] A[i];
-    delete [] B[i];
-    delete [] C[i];
+  // Cleanup memory
+  SimpleMultithreader::parallel_for(0, size, [=](int i) {
+    delete[] A[i];
+    delete[] B[i];
+    delete[] C[i];
   }, numThread);
   delete[] A;
   delete[] B;
